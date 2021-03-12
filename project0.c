@@ -46,7 +46,7 @@ int cmp(const void* a, const void* b)
 
 int main(int argc, char **argv, char** envp){
     int index = 0;
-    struct charCount* array[1024];
+    struct charCount* array[1000000];
     char character;
     int i;
     while((character = getchar()) != EOF){
