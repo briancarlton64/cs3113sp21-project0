@@ -1,0 +1,22 @@
+project0
+C S 3113
+2021-03-12
+Brian Carlton
+This application takes from standard input any file coded in UTF-8 and lists all symbols and their number of occurances sorted in order of occurances. In case of two symbols occuring in the same file, the first one found will be listed first.
+Bugs may occur if the supplied file is not formatted in UTF-8. This program is only designed to operate on files coded in UTF-8.
+To compile this program, use GNU make with the provided makefile.
+To use, simply pipe in any file coded in UTF-8 and the results will be printed on the console.
+
+Methods:
+
+isIn - this function is used to determine if a symbol has been seen before, and if so, at what index it is stored
+
+cmp - this function allows sorting of the array by qsort
+
+main - reads stdin, formats data, sorts, and prints
+
+Structures:
+
+uniChar - stores four bytes as char for easy manipulation
+
+charCount - stores a uniChar and an integer for keeping track of occurances 
