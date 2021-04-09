@@ -1,161 +1,166 @@
 #include <stdio.h>
-#include <wchar.h>
 #include <stdlib.h>
-#include <locale.h>
 
-struct uniChar{
-    char one;
-    char two;
-    char three;
-    char four;
-};
+#define MAX_PID 32768
+#define NUM_IDEN 3
+#define PROGRAM_OFFSET 2
+#define PID 0
+#define BURST 1
+#define EMPTY_PROCESS 0
 
-struct charCount{
-    struct uniChar* character;
-    int count;
-    int discovery;
-};
 
-int isIn(struct charCount* array[],struct uniChar* character, int index){
-    for(int i=0; i<index;i++){
-        if(array[i]->character->one == character->one
-        && array[i]->character->two == character->two
-        && array[i]->character->three == character->three
-        && array[i]->character->four == character->four){
-            return i;
+int voluntarySwitches(int processArray[MAX_PID][NUM_IDEN]) {
+    int seenPids[MAX_PID] = {};
+    int numSwitches = 0;
+    for (int index = PROGRAM_OFFSET; index < MAX_PID; index++) {
+        if (processArray[index][PID] == EMPTY_PROCESS) {
+            break;
+        }
+        if (!seenPids[processArray[index][PID]]) {
+            numSwitches++;
+            seenPids[processArray[index][PID]] = 1;
         }
     }
-    return -1;
-}
-int cmp(const void* a, const void* b)
-{
-    struct charCount* arg1 = *(struct charCount**)a;
-    struct charCount* arg2 = *(struct charCount**)b;
-
-    if(arg1->count>arg2->count){
-       return -1;
-    }
-    else if(arg1->count<arg2->count){
-        return 1;
-    }
-    else
-        return arg1->discovery<arg2->discovery ? -1 : 1;
-
+    return numSwitches;
 }
 
+int involuntarySwitches(int processArray[MAX_PID][NUM_IDEN]) {
+    int seenPids[MAX_PID] = {};
+    int numSwitches = 0;
+    for (int index = PROGRAM_OFFSET; index < MAX_PID; index++) {
+        if (processArray[index][PID] == EMPTY_PROCESS) {
+            break;
+        }
+        if (!seenPids[processArray[index][PID]]) {
 
-int main(int argc, char **argv, char** envp){
-    int index = 0;
-    struct charCount* array[1000000];
-    char character;
-    int i;
-    while((character = getchar()) != EOF){
+            seenPids[processArray[index][PID]] = 1;
+        } else if (processArray[index - 1][PID] != processArray[index][PID]) {
+            numSwitches++;
+        }
+    }
+    return numSwitches;
+}
 
-        if((unsigned char)character < 128){//one byte
-            struct uniChar *ch = malloc(sizeof *ch);
-            ch->one = character;
-            ch->two = (char)0;
-            ch->three =(char)0;
-            ch->four = (char)0;
-            i = isIn(array, ch,index);
-            if(i != -1){
-                array[i]->count++;
-            }
-            else{
-                struct charCount *counter = malloc(sizeof *counter);
-                counter->character = ch;
-                counter->count = 1;
-                counter->discovery = index;
-                array[index] = counter;
-                index++;
-            }
+int waitTimes(int processArray[MAX_PID][NUM_IDEN]) {
+    int waitTimes[MAX_PID] = {};
+    int currentPid;
+    int totalTime = 0;
+    for (int index = PROGRAM_OFFSET; index < MAX_PID; index++) {
+        currentPid = processArray[index][PID];
+        if (currentPid == EMPTY_PROCESS) {
+            break;
         }
-        else if((unsigned char)character < 224){ //two bytes
-            struct uniChar *ch = malloc(sizeof *ch);
-            ch->one = character;
-            ch->two = getchar();
-            ch->three =(char)0;
-            ch->four = (char)0;
-            i = isIn(array, ch,index);
-            if(i != -1){
-                array[i]->count++;
-            }
-            else{
-                struct charCount *counter = malloc(sizeof *counter);
-                counter->character = ch;
-                counter->count = 1;
-                counter->discovery = index;
-                array[index] = counter;
-                index++;
-            }
-        }
-        else if((unsigned char)character < 240){//three bytes
-            struct uniChar *ch = malloc(sizeof *ch);
-            ch->one = character;
-            ch->two = getchar();
-            ch->three = getchar();
-            ch->four = (char)0;
-            i = isIn(array, ch,index);
-            if(i != -1){
-                array[i]->count++;
-            }
-            else{
-                struct charCount *counter = malloc(sizeof *counter);
-                counter->character = ch;
-                counter->count = 1;
-                counter->discovery = index;
-                array[index] = counter;
-                index++;
-            }
-        }
-        else{//four bytes
-            struct uniChar *ch = malloc(sizeof *ch);
-            ch->one = character;
-            ch->two = getchar();
-            ch->three = getchar();
-            ch->four = getchar();
-            i = isIn(array, ch,index);
-            if(i != -1){
-                array[i]->count++;
-            }
-            else{
-                struct charCount *counter = malloc(sizeof *counter);
-                counter->character = ch;
-                counter->count = 1;
-                counter->discovery = index;
-                array[index] = counter;
-                index++;
+        if (index == PROGRAM_OFFSET) {
+            waitTimes[index] = 0;
+        } else {
+            for (int backIndex = index - 1; backIndex >= PROGRAM_OFFSET; backIndex--) {
+                if (processArray[backIndex][PID] == currentPid) {
+                    break;
+                }
+                waitTimes[index] += processArray[backIndex][BURST];
             }
         }
     }
-    unsigned int uniC = 0;
-    setlocale(LC_CTYPE, "");
-    qsort(array, index, sizeof(*array), cmp);
-    for(int i = 0; i<index;i++){
-        if(array[i]->character->four != (char)0){
+    for (int index = 0; index < MAX_PID; index++) {
+        totalTime += waitTimes[index];
+    }
+    return totalTime;
+}
 
-            uniC= (unsigned int)(unsigned char)array[i]->character->four & 0b00111111;
-            uniC+= ((unsigned int)(unsigned char)array[i]->character->three & 0b00111111) << 6;
-            uniC+= ((unsigned int)(unsigned char)array[i]->character->two & 0b00111111) << 12;
-            uniC+= ((unsigned int)(unsigned char)array[i]->character->one & 0b00000111) << 18;
+int responseTimes(int processArray[MAX_PID][NUM_IDEN]) {
+    int waitTimes[MAX_PID] = {};
+    int seenPids[MAX_PID] = {};
+    int currentPid;
+    int totalTime = 0;
+    for (int index = PROGRAM_OFFSET; index < MAX_PID; index++) {
+        currentPid = processArray[index][PID];
+        if (currentPid == EMPTY_PROCESS) {
+            break;
         }
-        else if(array[i]->character->three != (char)0){
+        if (index == PROGRAM_OFFSET) {
+            waitTimes[index] = 0;
+            seenPids[currentPid] = 1;
+        } else if (!seenPids[currentPid]) {
+            for (int backIndex = index - 1; backIndex >= PROGRAM_OFFSET; backIndex--) {
 
-            uniC= (unsigned int)(unsigned char)array[i]->character->three & 0b00111111;
-            uniC+= ((unsigned int)(unsigned char)array[i]->character->two & 0b00111111) << 6;
-            uniC+= ((unsigned int)(unsigned char)array[i]->character->one & 0b00001111) << 12;
+                waitTimes[index] += processArray[backIndex][BURST];
+                seenPids[currentPid] = 1;
+            }
         }
-        else if(array[i]->character->two != (char)0){
-            uniC= (unsigned int)(unsigned char)array[i]->character->two & 0b00111111;
-            uniC+= ((unsigned int)(unsigned char)array[i]->character->one & 0b00111111) << 6;
+    }
+    for (int index = 0; index < MAX_PID; index++) {
+        totalTime += waitTimes[index];
+    }
+    return totalTime;
+}
+
+int turnAroundTimes(int processArray[MAX_PID][NUM_IDEN]) {
+    int waitTimes[MAX_PID] = {};
+    int currentPid;
+    int totalTime = 0;
+    for (int index = PROGRAM_OFFSET; index < MAX_PID; index++) {
+        currentPid = processArray[index][PID];
+        waitTimes[index] += processArray[index][BURST];
+        if (currentPid == EMPTY_PROCESS) {
+            break;
+        }
+        for (int backIndex = index - 1; backIndex >= PROGRAM_OFFSET; backIndex--) {
+            if (processArray[backIndex][PID] == currentPid) {
+                break;
+            }
+            waitTimes[index] += processArray[backIndex][BURST];
+        }
+    }
+    for (int index = 0; index < MAX_PID; index++) {
+        totalTime += waitTimes[index];
+    }
+    return totalTime;
+}
+
+int totalTime(int processArray[MAX_PID][NUM_IDEN]) {
+    int time = 0;
+    for (int index = PROGRAM_OFFSET; index < MAX_PID; index++) {
+        time += processArray[index][BURST];
+    }
+    return time;
+}
+
+
+int main() {
+    int processArray[MAX_PID][NUM_IDEN] = {};
+    char currentChar;
+    int lineIndex = 0;
+    int columnIndex = 0;
+    int currentInt;
+    while ((currentChar = getchar()) != EOF) {
+
+        if (currentChar == '\n') {
+            lineIndex++;
+            columnIndex = 0;
+        }
+        if(currentChar == '\r'){
+
+        }
+        else if (currentChar == ' ' ){
+            columnIndex++;
         }
         else{
-            uniC = (unsigned int)(unsigned char)array[i]->character->one;
+            currentInt = atoi(&currentChar);
+            processArray[lineIndex][columnIndex] = currentInt;
         }
-
-        wprintf(L"%lc", (wchar_t)uniC );
-        wprintf(L"%lc",'-');
-        wprintf(L"%lc",'>');
-        wprintf(L"%d \n",array[i]->count);
     }
+    int numElem = processArray[1][0];
+    int waitTime = (waitTimes(processArray));
+    int volSwitch = voluntarySwitches(processArray);
+    int involSwitch = involuntarySwitches(processArray);
+    int responseTime = responseTimes(processArray);
+    int turnAroundTime = turnAroundTimes(processArray);
+    float throughPut = (float) numElem / (float) totalTime(processArray);
+    printf("%d \n", volSwitch);
+    printf("%d \n", involSwitch);
+    printf("%.2f \n", (float) 100);
+    printf("%.2f \n", throughPut);
+    printf("%.2f \n", (float) turnAroundTime / (float) numElem);
+    printf("%.2f \n", (float) waitTime / (float) numElem);
+    printf("%.2f \n", (float) responseTime / (float) numElem);
 }

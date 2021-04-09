@@ -1,22 +1,23 @@
-project0
-C S 3113
-2021-03-12
+project1
+cs3113
 Brian Carlton
-This application takes from standard input any file coded in UTF-8 and lists all symbols and their number of occurances sorted in order of occurances. In case of two symbols occuring in the same file, the first one found will be listed first.
-Bugs may occur if the supplied file is not formatted in UTF-8. This program is only designed to operate on files coded in UTF-8.
-To compile this program, use GNU make with the provided makefile.
-To use, simply pipe in any file coded in UTF-8 and the results will be printed on the console.
+2021 04 08
 
-Methods:
+This program will take in a list of programs, their burst time and priorties, and returns a list of statistics regarding the list of programs.
+There are seven stats listed:
 
-isIn - this function is used to determine if a symbol has been seen before, and if so, at what index it is stored
+voluntary context switches: the amount of times that the program encounters a new process that has not been encountered before
 
-cmp - this function allows sorting of the array by qsort
+non-voluntary context switches: the amount of times that the program encounters processes that have already been encountered
 
-main - reads stdin, formats data, sorts, and prints
+CPU Utilization: the amount of time that the CPU is busy, in this case, always 100 percent of the time.
 
-Structures:
+Throughput: the amount of work done per unit time
 
-uniChar - stores four bytes as char for easy manipulation
+Turnaround time: the amount of time taken from task submission to completetion
 
-charCount - stores a uniChar and an integer for keeping track of occurances 
+Waiting time: the amount of time from the submission of a process to the beginning of the last time a process is started
+
+Response time: the amount of time from the submission of a process to the beginning of the first time a process is started
+
+All methods within this program are for the express purpose of calculating these statistics.
